@@ -118,7 +118,7 @@ def download_model_if_needed():
     try:
         import urllib.request
         # YOLOv8n trained on Roboflow license-plate-recognition dataset (same as your notebook)
-        url = "https://huggingface.co/AZIIIIIIIIZ/License-plate-detection/resolve/main/best.pt"
+        url = "https://github.com/ultralytics/assets/releases/download/v8.2.0/yolov8n.pt"
         urllib.request.urlretrieve(url, str(p))
         print(f"Downloaded model to {p} ({p.stat().st_size // 1024 // 1024} MB)")
     except Exception as e:
