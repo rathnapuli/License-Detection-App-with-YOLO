@@ -129,7 +129,10 @@ def load_yolo():
     if not p.exists():
         return None
     try:
-        return YOLO(str(p))
+        import torch
+        torch.serialization.add_safe_globals([])
+        model = YOLO(str(p))
+        return model
     except Exception as e:
         print("YOLO load error:", e)
         return None
