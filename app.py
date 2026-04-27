@@ -1,16 +1,13 @@
 import os
 import uuid
 import base64
-import smtplib
+import requests
 import traceback
 import numpy as np
 import cv2
 import pandas as pd
 from pathlib import Path
 from datetime import datetime
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.mime.image import MIMEImage
 
 from flask import (
     Flask, render_template, request, redirect,
@@ -48,9 +45,10 @@ ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png"}
 
 # ─── ENVIRONMENT KEYS ─────────────────────────────────────────────────────────
 GEMINI_API_KEY  = os.environ.get("GEMINI_API_KEY", "")
-GMAIL_SENDER    = os.environ.get("GMAIL_SENDER", "")
-GMAIL_PASSWORD  = os.environ.get("GMAIL_PASSWORD", "")   # App password
-GMAIL_RECIPIENT = os.environ.get("GMAIL_RECIPIENT", GMAIL_SENDER)
+EMAILJS_SERVICE_ID  = os.environ.get("EMAILJS_SERVICE_ID",  "service_x1emgp9")
+EMAILJS_TEMPLATE_ID = os.environ.get("EMAILJS_TEMPLATE_ID", "template_t9feq2h")
+EMAILJS_PUBLIC_KEY  = os.environ.get("EMAILJS_PUBLIC_KEY",  "mYQVEFFqKFz4y8v4D")
+ALERT_RECIPIENT     = os.environ.get("ALERT_RECIPIENT",     "rathnapuli22@gmail.com")
 BLACKLIST_CSV   = os.environ.get("BLACKLIST_CSV", "blocklist.csv")
 MODEL_PATH      = os.environ.get("MODEL_PATH", "best.pt")
 
@@ -187,30 +185,29 @@ def gemini_read_plate(crop_path: Path) -> str:
         traceback.print_exc()
         return "ERROR"
 
-def send_alert_email(plate_text, result_img_path):
-    if not (GMAIL_SENDER and GMAIL_PASSWORD):
-        print("Email not configured, skipping alert.")
-        return
+def send_alert_email(plate_text, result_img_path=None):
+    """Send blacklist alert via EmailJS REST API."""
     try:
-        msg = MIMEMultipart()
-        msg["From"]    = GMAIL_SENDER
-        msg["To"]      = GMAIL_RECIPIENT
-        msg["Subject"] = f"🚨 BLACKLISTED PLATE DETECTED: {plate_text}"
-        body = (
-            f"Alert: Blacklisted license plate detected!\n\n"
-            f"Plate: {plate_text}\n"
-            f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-            "Annotated image attached."
+        payload = {
+            "service_id":  EMAILJS_SERVICE_ID,
+            "template_id": EMAILJS_TEMPLATE_ID,
+            "user_id":     EMAILJS_PUBLIC_KEY,
+            "template_params": {
+                "to_email": ALERT_RECIPIENT,
+                "plate":    plate_text,
+                "time":     datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "user":     "VPD System",
+            },
+        }
+        resp = requests.post(
+            "https://api.emailjs.com/api/v1.0/email/send",
+            json=payload,
+            timeout=10,
         )
-        msg.attach(MIMEText(body, "plain"))
-        with open(result_img_path, "rb") as f:
-            img_data = f.read()
-        image_part = MIMEImage(img_data, name=Path(result_img_path).name)
-        msg.attach(image_part)
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(GMAIL_SENDER, GMAIL_PASSWORD)
-            server.send_message(msg)
-        print(f"Alert email sent for plate {plate_text}")
+        if resp.status_code == 200:
+            print(f"Alert email sent for plate {plate_text}")
+        else:
+            print(f"EmailJS error {resp.status_code}: {resp.text}")
     except Exception as e:
         print("Email error:", e)
         traceback.print_exc()
