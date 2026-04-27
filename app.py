@@ -109,20 +109,19 @@ def load_blacklist():
 BLACKLIST = load_blacklist()
 
 def download_model_if_needed():
-    """Auto-download a pretrained license plate YOLOv8 model if best.pt is missing."""
     p = Path(MODEL_PATH)
-    if p.exists():
+    if p.exists() and p.stat().st_size > 1000000:
         print(f"Model found at {p}")
         return
-    print("best.pt not found — downloading pretrained license plate model from Hugging Face...")
+    print("Downloading YOLOv8n model...")
     try:
-        import urllib.request
-        # YOLOv8n trained on Roboflow license-plate-recognition dataset (same as your notebook)
-        url = "https://github.com/ultralytics/assets/releases/download/v8.2.0/yolov8n.pt"
-        urllib.request.urlretrieve(url, str(p))
-        print(f"Downloaded model to {p} ({p.stat().st_size // 1024 // 1024} MB)")
+        from ultralytics import YOLO
+        model = YOLO("yolov8n.pt")  # Ultralytics auto-downloads this
+        import shutil
+        shutil.copy("yolov8n.pt", str(p))
+        print("Model ready!")
     except Exception as e:
-        print(f"Model download failed: {e}. Detection will be unavailable.")
+        print(f"Model download failed: {e}")
 
 def load_yolo():
     download_model_if_needed()
