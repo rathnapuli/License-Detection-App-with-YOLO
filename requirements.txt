@@ -12,4 +12,3 @@ google-generativeai==0.8.3
 numpy==1.26.4
 pandas==2.1.4
 Pillow==10.3.0
-https://github.com/rathnapuli/License-Detection-App-with-YOLO.git
