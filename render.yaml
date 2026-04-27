@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: vehicle-plate-detection
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --workers 1 --timeout 120 --bind 0.0.0.0:$PORT
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false          # You fill this in Render dashboard
+      - key: GMAIL_SENDER
+        sync: false
+      - key: GMAIL_PASSWORD
+        sync: false
+      - key: GMAIL_RECIPIENT
+        sync: false
+    disk:
+      name: uploads
+      mountPath: /opt/render/project/src/static/uploads
+      sizeGB: 1

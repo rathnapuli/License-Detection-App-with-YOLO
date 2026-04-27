@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% if detections %}Detection Results{% else %}Upload Image{% endif %} - Vehicle Plate Detection</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          animation: {
+            'fade-in': 'fadeIn 0.6s ease-out forwards',
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'translateY(10px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Alpine.js for mobile menu -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+
+<body class="bg-gradient-to-br from-blue-50 via-white to-blue-50 min-h-screen text-blue-900 font-sans" x-data="{ open: false }">
+
+  <!-- Floating Blobs -->
+  <div class="fixed inset-0 -z-10 pointer-events-none">
+    <div class="absolute top-20 left-20 w-80 h-80 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse-slow"></div>
+    <div class="absolute bottom-20 right-20 w-96 h-96 bg-cyan-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse-slow animation-delay-2000"></div>
+  </div>
+
+  <!-- Header with Home Button -->
+  <header class="relative z-50 backdrop-blur-xl bg-white/80 border-b border-blue-100 shadow-sm">
+    <div class="container mx-auto px-6 py-4">
+      <div class="flex items-center justify-between">
+        <!-- Logo + Title -->
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center font-bold text-white shadow-lg">
+            VPD
+          </div>
+          <div>
+            <h1 class="text-xl font-bold text-blue-900">
+              {% if detections %}Detection Results{% else %}Vehicle Plate Detection{% endif %}
+            </h1>
+            <p class="text-xs text-blue-600 -mt-1">Deep Learning System</p>
+          </div>
+        </div>
+
+        <!-- Desktop Nav -->
+        <nav class="hidden md:flex items-center space-x-4">
+          <!-- Home Button -->
+          <a href="{{ url_for('home') }}" 
+             class="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg hover:shadow-blue-500/30 transition transform hover:scale-105 flex items-center gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+            </svg>
+            Home
+          </a>
+
+          <span class="text-sm font-medium text-cyan-700">Hi, {{ current_user.username }}!</span>
+
+          {% if detections %}
+            <a href="{{ url_for('predict') }}" class="px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-medium hover:bg-blue-200 transition">
+              New Upload
+            </a>
+          {% endif %}
+
+          <a href="{{ url_for('logout') }}" class="px-4 py-2 bg-red-100 text-red-700 rounded-full text-sm font-medium hover:bg-red-200 transition">
+            Logout
+          </a>
+        </nav>
+
+        <!-- Mobile Menu Toggle -->
+        <button @click="open = !open" class="md:hidden text-blue-700">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="open ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div x-show="open" x-transition class="md:hidden mt-4 pb-4 border-t border-blue-100 pt-4 space-y-3">
+        <a href="{{ url_for('home') }}" class="block px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-full text-sm font-medium text-center">
+          Home
+        </a>
+        <div class="text-sm text-cyan-700 font-medium text-center">Hi, {{ current_user.username }}!</div>
+        {% if detections %}
+          <a href="{{ url_for('predict') }}" class="block text-center text-blue-700 hover:text-blue-500">New Upload</a>
+        {% endif %}
+        <a href="{{ url_for('logout') }}" class="block text-center text-red-600 hover:text-red-700">Logout</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==========================  UPLOAD SECTION (GET)  ========================== -->
+  {% if not detections %}
+  <main class="container mx-auto px-6 py-16 max-w-4xl">
+    <div class="text-center mb-12 animate-fade-in">
+      <h1 class="text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-cyan-600">
+        Upload Vehicle Image
+      </h1>
+      <p class="mt-3 text-lg text-blue-600">JPG / JPEG / PNG (max 10 MB)</p>
+    </div>
+
+    <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-blue-100 p-8 md:p-12 animate-fade-in animation-delay-200">
+      <form method="POST" enctype="multipart/form-data" class="space-y-8">
+        {{ form.hidden_tag() }}
+
+        <div class="flex flex-col items-center">
+          <div class="w-full max-w-md">
+            <label class="block text-sm font-medium text-blue-700 mb-3">Choose Image</label>
+            <div class="border-2 border-dashed border-blue-300 rounded-xl p-8 text-center hover:border-blue-500 transition cursor-pointer bg-blue-50/50"
+                 onclick="document.getElementById('image').click()">
+              <svg class="w-16 h-16 mx-auto text-blue-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
+              </svg>
+              <p class="text-blue-600 font-medium">Click to upload or drag & drop</p>
+              <p class="text-xs text-blue-500 mt-1">JPG, JPEG, PNG up to 10 MB</p>
+            </div>
+            {{ form.image(id="image", class="hidden") }}
+          </div>
+
+          <div id="file-name" class="mt-4 text-sm text-cyan-700 font-medium hidden"></div>
+
+          <div class="mt-8">
+            {{ form.submit(class="px-10 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-bold text-lg shadow-lg hover:shadow-xl hover:shadow-blue-500/40 transform hover:scale-105 transition-all duration-300 flex items-center gap-2") }}
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="mt-12 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-6 border border-blue-200">
+      <h3 class="font-bold text-blue-900 mb-2">Tips for Best Results:</h3>
+      <ul class="text-sm text-blue-700 space-y-1">
+        <li>Clear, well-lit front/rear view of the vehicle</li>
+        <li>License plate fully visible, no blur</li>
+        <li>Avoid extreme angles or heavy shadows</li>
+      </ul>
+    </div>
+  </main>
+  {% endif %}
+
+  <!-- ==========================  RESULT SECTION (POST)  ========================== -->
+  {% if detections %}
+  <main class="container mx-auto px-6 py-12 max-w-7xl">
+
+    {% if alerts|length > 0 %}
+    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mx-6 mt-6 rounded-r-lg shadow-md animate-pulse">
+      <p class="font-bold">BLACKLISTED PLATE DETECTED!</p>
+      <p>Plates: <strong>{{ alerts|join(', ') }}</strong> → Email alert sent.</p>
+    </div>
+    {% endif %}
+
+    <div class="text-center mb-10">
+      <h1 class="text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-cyan-600">
+        Detection Complete
+      </h1>
+      <p class="mt-3 text-lg text-blue-600">YOLOv10 + Gemini OCR</p>
+    </div>
+
+    <!-- Annotated Image -->
+    <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-blue-100 p-6 mb-10 animate-fade-in">
+      <h2 class="text-2xl font-bold text-blue-900 mb-4 flex items-center gap-2">
+        <svg class="w-6 h-6 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+        Annotated Image
+      </h2>
+      <div class="flex justify-center">
+        <img src="{{ url_for('uploaded_file', filename=result_img) }}"
+             alt="Result"
+             class="max-w-full h-auto rounded-lg shadow-lg border border-blue-200">
+      </div>
+    </div>
+
+    <!-- Detections Table -->
+    <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-blue-100 p-6 animate-fade-in animation-delay-300">
+      <h2 class="text-2xl font-bold text-blue-900 mb-6 flex items-center gap-2">
+        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        Detected License Plates
+      </h2>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-gradient-to-r from-blue-100 to-cyan-100">
+              <th class="px-6 py-4 text-sm font-bold text-blue-900 uppercase tracking-wider">Plate</th>
+              <th class="px-6 py-4 text-sm font-bold text-blue-900 uppercase tracking-wider">Confidence</th>
+              <th class="px-6 py-4 text-sm font-bold text-blue-900 uppercase tracking-wider">Status</th>
+              <th class="px-6 py-4 text-sm font-bold text-blue-900 uppercase tracking-wider">Crop</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-blue-100">
+            {% for d in detections %}
+            <tr class="hover:bg-blue-50 transition">
+              <td class="px-6 py-4 font-mono text-lg font-bold text-blue-900">{{ d.plate }}</td>
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+                  {% if d.conf >= 0.8 %}bg-green-100 text-green-800
+                  {% elif d.conf >= 0.6 %}bg-yellow-100 text-yellow-800
+                  {% else %}bg-red-100 text-red-800{% endif %}">
+                  {{ "%.1f"|format(d.conf * 100) }}%
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                {% if d.plate|upper in BLACKLIST %}
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 animate-pulse">
+                  BLACKLISTED
+                </span>
+                {% else %}
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                  Clean
+                </span>
+                {% endif %}
+              </td>
+              <td class="px-6 py-4">
+                <a href="{{ url_for('uploaded_file', filename=d.crop) }}" target="_blank">
+                  <img src="{{ url_for('uploaded_file', filename=d.crop) }}"
+                       alt="Crop {{ d.plate }}"
+                       class="w-20 h-20 object-cover rounded-lg shadow border border-blue-200 hover:scale-150 transition transform duration-300">
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="flex justify-center mt-10">
+      <a href="{{ url_for('predict') }}"
+         class="px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-bold text-lg shadow-lg hover:shadow-xl hover:shadow-blue-500/40 transform hover:scale-105 transition-all duration-300 flex items-center gap-2">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+        </svg>
+        Upload Another Image
+      </a>
+    </div>
+  </main>
+  {% endif %}
+
+  <!-- Footer -->
+  <footer class="mt-20 py-8 text-center text-blue-600 text-sm border-t border-blue-100 bg-white/50 backdrop-blur">
+    <p>© Vehicle Plate Detection System • YOLOv10 + Gemini AI</p>
+  </footer>
+
+  <!-- JS for file-name preview -->
+  <script>
+    const fileInput = document.getElementById('image');
+    const fileNameDisplay = document.getElementById('file-name');
+    if (fileInput) {
+      fileInput.addEventListener('change', () => {
+        if (fileInput.files.length) {
+          fileNameDisplay.textContent = `Selected: ${fileInput.files[0].name}`;
+          fileNameDisplay.classList.remove('hidden');
+        } else {
+          fileNameDisplay.classList.add('hidden');
+        }
+      });
+    }
+  </script>
+</body>
+</html>

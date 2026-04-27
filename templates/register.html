@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Register | VPD System</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          animation: {
+            'float': 'float 6s ease-in-out infinite',
+            'fade-in': 'fadeIn 0.8s ease-out forwards',
+            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-15px)' },
+            },
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'translateY(10px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Alpine.js -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <!-- Glassmorphism -->
+  <link href="https://cdn.jsdelivr.net/gh/21-DOT-DEV/21.css@latest/dist/21.min.css" rel="stylesheet" />
+</head>
+
+<body class="bg-gradient-to-br from-blue-50 via-white to-blue-50 min-h-screen flex items-center justify-center p-6 font-sans">
+
+  <!-- Floating Background -->
+  <div class="fixed inset-0 -z-10">
+    <div class="absolute top-10 left-10 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse-slow"></div>
+    <div class="absolute bottom-10 right-10 w-80 h-80 bg-cyan-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse-slow animation-delay-2000"></div>
+  </div>
+
+  <!-- Register Card -->
+  <div class="w-full max-w-md">
+    <div class="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl p-8 border border-blue-100 animate-fade-in">
+      
+      <!-- Logo + Title -->
+      <div class="text-center mb-8">
+        <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+          <span class="text-white text-2xl font-bold">VPD</span>
+        </div>
+        <h1 class="text-3xl font-bold text-blue-900">Create Account</h1>
+        <p class="text-blue-600 mt-2">Join the real-time detection system</p>
+      </div>
+
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="space-y-2 mb-4">
+            {% for category, message in messages %}
+              <div class="p-3 rounded-lg text-sm font-medium text-center
+                {% if category == 'danger' %}
+                  bg-red-100 text-red-700 border border-red-200
+                {% else %}
+                  bg-green-100 text-green-700 border border-green-200
+                {% endif %}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <!-- Register Form with Alpine.js -->
+      <form method="post" class="space-y-5" 
+            x-data="{ password: '', confirm: '', match: true, valid: false }" 
+            @input="match = (password === confirm || confirm === ''); valid = /^(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=!]).{6,}$/.test(password)">
+
+        {{ form.hidden_tag() }}
+
+        <!-- Username -->
+        <div>
+          {{ form.username.label(class="block text-sm font-semibold text-blue-800 mb-2") }}
+          <div class="relative">
+            {{ form.username(
+                class="w-full px-4 py-3 rounded-xl border border-blue-200 bg-white/50 backdrop-blur-sm focus:ring-4 focus:ring-blue-300 focus:border-blue-500 outline-none transition",
+                placeholder="Choose a username"
+            ) }}
+            <svg class="absolute right-3 top-3.5 w-5 h-5 text-blue-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div>
+          {{ form.email.label(class="block text-sm font-semibold text-blue-800 mb-2") }}
+          <div class="relative">
+            {{ form.email(
+                class="w-full px-4 py-3 rounded-xl border border-blue-200 bg-white/50 backdrop-blur-sm focus:ring-4 focus:ring-blue-300 focus:border-blue-500 outline-none transition",
+                placeholder="you@example.com"
+            ) }}
+            <svg class="absolute right-3 top-3.5 w-5 h-5 text-blue-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div>
+          {{ form.password.label(class="block text-sm font-semibold text-blue-800 mb-2") }}
+          <div class="relative">
+            <input type="password" 
+                   name="{{ form.password.name }}" 
+                   id="{{ form.password.id }}"
+                   class="w-full px-4 py-3 rounded-xl border border-blue-200 bg-white/50 backdrop-blur-sm focus:ring-4 focus:ring-blue-300 focus:border-blue-500 outline-none transition"
+                   placeholder="Min 6 chars, 1 uppercase, 1 digit, 1 special"
+                   pattern="^(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=!]).{6,}$"
+                   title="Min 6 chars, 1 uppercase, 1 digit, 1 special char"
+                   x-model="password"
+                   required>
+            <svg class="absolute right-3 top-3.5 w-5 h-5 text-blue-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0-1.1-.9-2-2-2s-2 .9-2 2 2 4 2 4m2-4c0-1.1.9-2 2-2s2 .9 2 2-2 4-2 4m-6 5h12a1 1 0 001-1v-1.5a1 1 0 00-.293-.707l-6-6a1 1 0 00-1.414 0l-6 6A1 1 0 005 17.5V19a1 1 0 001 1z"></path>
+            </svg>
+          </div>
+
+          <!-- Password Strength Feedback -->
+          <div class="mt-2 text-xs space-y-1">
+            <div class="flex items-center gap-2" x-show="password.length >= 6">
+              <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+              <span class="text-green-600">At least 6 characters</span>
+            </div>
+            <div class="flex items-center gap-2" x-show="/[A-Z]/.test(password)">
+              <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+              <span class="text-green-600">Contains uppercase letter</span>
+            </div>
+            <div class="flex items-center gap-2" x-show="/\d/.test(password)">
+              <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+              <span class="text-green-600">Contains digit</span>
+            </div>
+            <div class="flex items-center gap-2" x-show="/[@#$%^&+=!]/.test(password)">
+              <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+              <span class="text-green-600">Contains special character</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Confirm Password -->
+        <div>
+          {{ form.confirm.label(class="block text-sm font-semibold text-blue-800 mb-2") }}
+          <div class="relative">
+            <input type="password" 
+                   name="{{ form.confirm.name }}" 
+                   id="{{ form.confirm.id }}"
+                   class="w-full px-4 py-3 rounded-xl border border-blue-200 bg-white/50 backdrop-blur-sm focus:ring-4 focus:ring-blue-300 focus:border-blue-500 outline-none transition"
+                   placeholder="Confirm your password"
+                   pattern="^(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=!]).{6,}$"
+                   x-model="confirm"
+                   required>
+            <svg class="absolute right-3 top-3.5 w-5 h-5 text-blue-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+
+          <!-- Password Match Error -->
+          <div x-show="!match && confirm !== ''" 
+               class="mt-2 p-2 bg-red-100 text-red-700 border border-red-300 rounded-lg text-sm font-medium flex items-center gap-2 animate-pulse">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+            </svg>
+            Passwords do not match
+          </div>
+
+          <!-- Success -->
+          <div x-show="match && confirm !== '' && valid" 
+               class="mt-2 text-green-600 text-sm font-medium flex items-center gap-2">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+            </svg>
+            Strong password & passwords match
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div>
+          <button type="submit"
+                  class="w-full py-3.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-xl hover:shadow-green-500/40 transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                  x-bind:disabled="!valid || !match || confirm === ''"
+                  x-text="!valid ? 'Password too weak' : (!match ? 'Passwords don\'t match' : 'Register')">
+            Register
+          </button>
+        </div>
+      </form>
+
+      <!-- Login Link -->
+      <p class="text-center mt-6 text-blue-700">
+        Already have an account?
+        <a href="{{ url_for('login') }}" class="font-bold text-cyan-600 hover:text-cyan-700 underline">Login here</a>
+      </p>
+
+      <!-- Back to Home -->
+      <p class="text-center mt-3 text-sm text-blue-500">
+        <a href="{{ url_for('home') }}" class="hover:underline">Back to Home</a>
+      </p>
+    </div>
+  </div>
+
+</body>
+</html>
